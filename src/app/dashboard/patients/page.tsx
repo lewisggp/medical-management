@@ -1,3 +1,5 @@
+import PatientManagement from '@/views/dashboard/PatientManagement';
+
 export default function PatientsPage() {
-  return <div>Patients</div>;
+  return <PatientManagement />;
 }
