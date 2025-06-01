@@ -1,93 +1,56 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Grid,
-  Alert,
-  MenuItem,
-} from "@mui/material";
-import Link from "next/link";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-
-const registerSchema = z
-  .object({
-    name: z.string().min(1, "Name is required"),
-    email: z.string().email("Invalid email format"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z.string(),
-    license: z.string().min(1, "License number is required"),
-    phone: z.string().min(1, "Phone number is required"),
-    specialty: z.string().min(1, "Specialty is required"),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
-
-type RegisterFormData = z.infer<typeof registerSchema>;
-
-const specialties = [
-  "Cardiology",
-  "Dermatology",
-  "Endocrinology",
-  "Gastroenterology",
-  "Neurology",
-  "Oncology",
-  "Pediatrics",
-  "Psychiatry",
-  "Radiology",
-  "Surgery",
-];
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Box, Button, TextField, Typography, Grid, Alert, MenuItem } from '@mui/material';
+import Link from 'next/link';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { DoctorFormValues, doctorSchema } from '@/schemas/Doctor';
+import { specialties } from '@/lib/doctor-specialties';
 
 export default function RegisterPage() {
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState<string>('');
   const router = useRouter();
   const {
     register,
     handleSubmit,
-    formState: { errors },
-  } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
+    formState: { errors }
+  } = useForm<DoctorFormValues>({
+    resolver: zodResolver(doctorSchema)
   });
 
-  const onSubmit = async (data: RegisterFormData) => {
+  const onSubmit = async (data: DoctorFormValues) => {
     try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(data)
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "Registration failed");
+        throw new Error(result.error || 'Registration failed');
       }
 
-      router.push("/login?registered=true");
+      router.push('/login?registered=true');
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
 
   return (
     <Box
       sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "100vh",
-        py: 4,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        py: 4
       }}
     >
       <Typography variant="h4" component="h1" gutterBottom>
@@ -98,10 +61,7 @@ export default function RegisterPage() {
       </Typography>
 
       {error && (
-        <Alert
-          severity="error"
-          sx={{ mb: 2, width: "100%", maxWidth: "600px" }}
-        >
+        <Alert severity="error" sx={{ mb: 2, width: '100%', maxWidth: '600px' }}>
           {error}
         </Alert>
       )}
@@ -110,37 +70,24 @@ export default function RegisterPage() {
         component="form"
         onSubmit={handleSubmit(onSubmit)}
         sx={{
-          width: "100%",
-          maxWidth: "600px",
-          mt: 3,
+          width: '100%',
+          maxWidth: '600px',
+          mt: 3
         }}
       >
         <Grid container spacing={2}>
           <Grid size={{ xs: 12 }}>
-            <TextField
-              fullWidth
-              label="Full Name"
-              {...register("name")}
-              error={!!errors.name}
-              helperText={errors.name?.message}
-            />
+            <TextField fullWidth label="Full Name" {...register('name')} error={!!errors.name} helperText={errors.name?.message} />
           </Grid>
           <Grid size={{ xs: 12 }}>
-            <TextField
-              fullWidth
-              label="Email"
-              type="email"
-              {...register("email")}
-              error={!!errors.email}
-              helperText={errors.email?.message}
-            />
+            <TextField fullWidth label="Email" type="email" {...register('email')} error={!!errors.email} helperText={errors.email?.message} />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               fullWidth
               label="Password"
               type="password"
-              {...register("password")}
+              {...register('password')}
               error={!!errors.password}
               helperText={errors.password?.message}
             />
@@ -150,28 +97,16 @@ export default function RegisterPage() {
               fullWidth
               label="Confirm Password"
               type="password"
-              {...register("confirmPassword")}
+              {...register('confirmPassword')}
               error={!!errors.confirmPassword}
               helperText={errors.confirmPassword?.message}
             />
           </Grid>
           <Grid size={{ xs: 12 }}>
-            <TextField
-              fullWidth
-              label="License Number"
-              {...register("license")}
-              error={!!errors.license}
-              helperText={errors.license?.message}
-            />
+            <TextField fullWidth label="License Number" {...register('license')} error={!!errors.license} helperText={errors.license?.message} />
           </Grid>
           <Grid size={{ xs: 12 }}>
-            <TextField
-              fullWidth
-              label="Phone Number"
-              {...register("phone")}
-              error={!!errors.phone}
-              helperText={errors.phone?.message}
-            />
+            <TextField fullWidth label="Phone Number" {...register('phone')} error={!!errors.phone} helperText={errors.phone?.message} />
           </Grid>
           <Grid size={{ xs: 12 }}>
             <TextField
@@ -179,7 +114,7 @@ export default function RegisterPage() {
               select
               label="Specialty"
               defaultValue={null}
-              {...register("specialty")}
+              {...register('specialty')}
               error={!!errors.specialty}
               helperText={errors.specialty?.message}
             >
@@ -192,18 +127,13 @@ export default function RegisterPage() {
           </Grid>
         </Grid>
 
-        <Button
-          type="submit"
-          fullWidth
-          variant="contained"
-          sx={{ mt: 3, mb: 2 }}
-        >
+        <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}>
           Register
         </Button>
 
         <Typography variant="body2" align="center">
-          Already have an account?{" "}
-          <Link href="/login" style={{ textDecoration: "none" }}>
+          Already have an account?{' '}
+          <Link href="/login" style={{ textDecoration: 'none' }}>
             Sign in
           </Link>
         </Typography>
