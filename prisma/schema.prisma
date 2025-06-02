@@ -45,19 +45,33 @@ model Patient {
   updatedAt      DateTime      @updatedAt
 }
 
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum AppointmentType {
+  GENERAL
+  SPECIALIST
+  EMERGENCY
+  FOLLOW_UP
+  OTHER
+}
+
 model Appointment {
-  id          Int      @id @default(autoincrement())
-  patient     Patient  @relation(fields: [patientId], references: [id])
+  id          Int               @id @default(autoincrement())
+  patient     Patient           @relation(fields: [patientId], references: [id])
   patientId   Int
-  doctor      Doctor   @relation(fields: [doctorId], references: [id])
+  doctor      Doctor            @relation(fields: [doctorId], references: [id])
   doctorId    Int
-  type        String
-  date        DateTime
-  time        String
+  type        AppointmentType   @default(GENERAL)
   description String
-  status      String   @default("Scheduled")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  date        DateTime
+  notes       String
+  status      AppointmentStatus @default(SCHEDULED)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 }
 
 model Account {

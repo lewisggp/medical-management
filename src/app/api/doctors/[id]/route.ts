@@ -14,14 +14,14 @@ interface DoctorData {
 }
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
-  const { id } = await params;
-  const session = await getServerSession(authOptions);
-
-  if (!session) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  }
-
   try {
+    const { id } = await params;
+    const session = await getServerSession(authOptions);
+
+    if (!session) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const doctor = await prisma.doctor.findUnique({
       omit: { password: true },
       where: { id: Number(id) }
@@ -39,14 +39,14 @@ export async function GET(request: Request, { params }: { params: { id: string }
 }
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
-  const { id } = await params;
-  const session = await getServerSession(authOptions);
-
-  if (!session) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  }
-
   try {
+    const { id } = await params;
+    const session = await getServerSession(authOptions);
+
+    if (!session) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const data: DoctorData = await request.json();
     const doctorId = Number(id);
 
@@ -100,14 +100,14 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-  const { id } = await params;
-  const session = await getServerSession(authOptions);
-
-  if (!session) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  }
-
   try {
+    const { id } = await params;
+    const session = await getServerSession(authOptions);
+
+    if (!session) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const doctorId = Number(id);
 
     // Check if doctor exists

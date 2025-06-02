@@ -1,3 +1,5 @@
+import AppointmentManagement from '@/views/dashboard/AppointmentManagement';
+
 export default function AppointmentsPage() {
-  return <div>Appointments</div>;
+  return <AppointmentManagement />;
 }
