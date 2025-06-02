@@ -54,7 +54,7 @@ export default function RegisterPage() {
       }}
     >
       <Typography variant="h4" component="h1" gutterBottom>
-        BREXAS DEL MAR
+        Clinica Del Adulto Mayor
       </Typography>
       <Typography variant="h6" gutterBottom>
         Doctor Registration

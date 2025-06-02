@@ -118,7 +118,6 @@ const AppointmentModal = ({ open, onClose, appointment, action, onSuccess }: App
         {isView && 'Detalles de la Cita'}
       </DialogTitle>
       <DialogContent>
-        {JSON.stringify(errors)}
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 2 }}>
             <Grid container spacing={2}>

@@ -1,7 +1,7 @@
 'use client';
 
 // Next
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
@@ -45,6 +45,7 @@ const menuItems = [
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { data: session } = useSession();
   const pathname = usePathname();
   const today = format(new Date(), 'EEEE d MMMM yyyy', { locale: es });
 
@@ -70,10 +71,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </Avatar>
           <Box>
             <Typography variant="subtitle1" fontWeight="bold">
-              Administrador
+              {session?.user?.name}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              admin@edoc.com
+              {session?.user?.email}
             </Typography>
           </Box>
         </Box>
