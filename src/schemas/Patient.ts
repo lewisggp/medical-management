@@ -12,7 +12,22 @@ export const patientSchema = z.object({
     })
     .refine((date) => date <= new Date(), {
       message: 'La fecha de nacimiento no puede ser en el futuro'
-    }),
+    })
+    .refine(
+      (date) => {
+        const today = new Date();
+        let age = today.getFullYear() - date.getFullYear();
+        const monthDiff = today.getMonth() - date.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
+          age--;
+        }
+        console.log(age);
+        return age >= 60;
+      },
+      {
+        message: 'El paciente debe tener al menos 60 años'
+      }
+    ),
   address: z.string().min(1, 'Dirección es requerida'),
   bloodType: z.string().min(1, 'Tipo de sangre es requerido'),
   allergies: z.string().optional(),

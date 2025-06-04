@@ -163,6 +163,7 @@ const PatientModal = ({ open, onClose, patient, action, onSuccess }: PatientModa
                     <DatePicker
                       {...field}
                       label="Fecha de Nacimiento"
+                      minDate={new Date('1900-01-01T00:00:00.000Z')}
                       maxDate={new Date()}
                       disabled={isView}
                       slotProps={{
