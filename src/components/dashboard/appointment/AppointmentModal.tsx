@@ -28,6 +28,7 @@ import useDoctors from '@/hooks/useDoctor';
 import usePatients from '@/hooks/usePatient';
 import { Appointment } from '@/hooks/useAppointment';
 import { specialties } from '@/lib/doctor-specialties';
+import { format, isWithinInterval, set } from 'date-fns';
 
 interface AppointmentModalProps {
   open: boolean;
@@ -45,6 +46,7 @@ const AppointmentModal = ({ open, onClose, appointment, action, onSuccess }: App
   const { doctors } = useDoctors();
   const { patients } = usePatients();
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>(specialties[0]);
+  const [selectedDoctor, setSelectedDoctor] = useState<(typeof doctors)[0] | null>(null);
 
   const filteredDoctors = useMemo(() => {
     if (!selectedSpecialty) return doctors;
@@ -57,7 +59,9 @@ const AppointmentModal = ({ open, onClose, appointment, action, onSuccess }: App
     watch,
     reset,
     setValue,
-    formState: { errors, isSubmitting }
+    trigger,
+    formState: { errors, isSubmitting },
+    setError
   } = useForm<AppointmentFormValues>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
@@ -71,11 +75,58 @@ const AppointmentModal = ({ open, onClose, appointment, action, onSuccess }: App
     }
   });
 
+  const watchDoctorId = watch('doctorId');
+
   useEffect(() => {
     if (appointment) {
       reset(appointment);
+      const doctor = doctors.find((d) => d.id === appointment.doctorId);
+      setSelectedDoctor(doctor || null);
+      if (doctor) {
+        setSelectedSpecialty(doctor.specialty);
+      }
     }
-  }, [appointment, reset]);
+  }, [appointment, reset, doctors]);
+
+  useEffect(() => {
+    const doctor = doctors.find((d) => d.id === watchDoctorId);
+    setSelectedDoctor(doctor || null);
+    if (typeof window !== 'undefined') {
+      (window as any).selectedDoctor = doctor || null;
+    }
+  }, [watchDoctorId, doctors]);
+
+  useEffect(() => {
+    if (watch('date')) {
+      trigger('date');
+    }
+  }, [selectedDoctor, watch('date'), trigger]);
+
+  const isDayAvailable = (date: Date) => {
+    if (!selectedDoctor) return false;
+
+    const dayOfWeek = date.getDay();
+    const schedule = selectedDoctor.schedules.find((s) => s.dayOfWeek === dayOfWeek);
+
+    return !!schedule;
+  };
+
+  const isTimeAvailable = (time: Date) => {
+    if (!selectedDoctor) return false;
+
+    const dayOfWeek = time.getDay();
+    const schedule = selectedDoctor.schedules.find((s) => s.dayOfWeek === dayOfWeek);
+
+    if (!schedule) return false;
+
+    const [startHour, startMinute] = schedule.startTime.split(':').map(Number);
+    const [endHour, endMinute] = schedule.endTime.split(':').map(Number);
+
+    const scheduleStart = set(time, { hours: startHour, minutes: startMinute });
+    const scheduleEnd = set(time, { hours: endHour, minutes: endMinute });
+
+    return isWithinInterval(time, { start: scheduleStart, end: scheduleEnd });
+  };
 
   const handleDateChange = (date: Date | null) => {
     if (!date) return;
@@ -85,7 +136,11 @@ const AppointmentModal = ({ open, onClose, appointment, action, onSuccess }: App
     newDate.setHours(currentDate.getHours());
     newDate.setMinutes(currentDate.getMinutes());
 
-    setValue('date', newDate, { shouldValidate: true });
+    if (isDayAvailable(newDate)) {
+      setValue('date', newDate, { shouldValidate: true });
+    } else {
+      toast.error('El doctor no atiende este día');
+    }
   };
 
   const handleTimeChange = (time: Date | null) => {
@@ -96,7 +151,11 @@ const AppointmentModal = ({ open, onClose, appointment, action, onSuccess }: App
     newDate.setHours(time.getHours());
     newDate.setMinutes(time.getMinutes());
 
-    setValue('date', newDate, { shouldValidate: true });
+    if (isTimeAvailable(newDate)) {
+      setValue('date', newDate, { shouldValidate: true });
+    } else {
+      toast.error('El horario seleccionado está fuera del horario de atención del doctor');
+    }
   };
 
   const onSubmit = async (data: AppointmentFormValues) => {
@@ -126,6 +185,17 @@ const AppointmentModal = ({ open, onClose, appointment, action, onSuccess }: App
     }
   };
 
+  const getScheduleText = () => {
+    if (!selectedDoctor) return 'Seleccione un doctor para ver los horarios disponibles';
+
+    return selectedDoctor.schedules
+      .map((schedule) => {
+        const day = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][schedule.dayOfWeek];
+        return `${day}: ${schedule.startTime} - ${schedule.endTime}`;
+      })
+      .join('\n');
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
@@ -145,6 +215,7 @@ const AppointmentModal = ({ open, onClose, appointment, action, onSuccess }: App
                     <FormControl fullWidth error={!!errors.patientId}>
                       <InputLabel>Paciente</InputLabel>
                       <Select {...field} label="Paciente" disabled={isView}>
+                        <MenuItem value={-1}>Seleccione un paciente</MenuItem>
                         {patients.map((patient) => (
                           <MenuItem key={patient.id} value={patient.id}>
                             {patient.name}
@@ -164,7 +235,8 @@ const AppointmentModal = ({ open, onClose, appointment, action, onSuccess }: App
                     value={selectedSpecialty}
                     onChange={(e) => {
                       setSelectedSpecialty(e.target.value as string);
-                      setValue('doctorId', 0, { shouldValidate: true });
+                      setValue('doctorId', -1, { shouldValidate: true });
+                      setSelectedDoctor(null);
                     }}
                     label="Especialidad"
                     disabled={isView}
@@ -185,7 +257,15 @@ const AppointmentModal = ({ open, onClose, appointment, action, onSuccess }: App
                   render={({ field }) => (
                     <FormControl fullWidth error={!!errors.doctorId}>
                       <InputLabel>Doctor</InputLabel>
-                      <Select {...field} label="Doctor" disabled={isView}>
+                      <Select
+                        {...field}
+                        label="Doctor"
+                        disabled={isView}
+                        onChange={(e) => {
+                          field.onChange(Number(e.target.value));
+                        }}
+                      >
+                        <MenuItem value={-1}>Seleccione un doctor</MenuItem>
                         {filteredDoctors.map((doctor) => (
                           <MenuItem key={doctor.id} value={doctor.id}>
                             {doctor.name} - {doctor.specialty}
@@ -199,6 +279,10 @@ const AppointmentModal = ({ open, onClose, appointment, action, onSuccess }: App
               </Grid>
 
               <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField label="Horarios Disponibles" multiline rows={3} value={getScheduleText()} fullWidth disabled variant="filled" />
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   name="date"
                   control={control}
@@ -208,12 +292,13 @@ const AppointmentModal = ({ open, onClose, appointment, action, onSuccess }: App
                       value={field.value}
                       onChange={handleDateChange}
                       minDate={new Date()}
-                      disabled={isView}
+                      disabled={isView || !selectedDoctor}
+                      shouldDisableDate={(date) => !isDayAvailable(date)}
                       slotProps={{
                         textField: {
                           fullWidth: true,
                           error: !!errors.date,
-                          helperText: errors.date?.message
+                          helperText: errors.date?.message || (!selectedDoctor ? 'Seleccione un doctor primero' : '')
                         }
                       }}
                     />
@@ -230,12 +315,25 @@ const AppointmentModal = ({ open, onClose, appointment, action, onSuccess }: App
                       label="Hora"
                       value={watch('date') ?? new Date()}
                       onChange={handleTimeChange}
-                      disabled={isView || !watch('date')}
+                      disabled={isView || !selectedDoctor || !watch('date')}
+                      shouldDisableTime={(timeValue, type) => {
+                        if (type !== 'hours' && type !== 'minutes') return false;
+                        const date = watch('date');
+                        if (!date) return true;
+
+                        const testDate = new Date(date);
+                        if (type === 'hours') {
+                          testDate.setHours(timeValue.getHours());
+                        } else {
+                          testDate.setMinutes(timeValue.getMinutes());
+                        }
+                        return !isTimeAvailable(testDate);
+                      }}
                       slotProps={{
                         textField: {
                           fullWidth: true,
                           error: !!errors.date,
-                          helperText: errors.date?.message
+                          helperText: errors.date?.message || (!selectedDoctor ? 'Seleccione un doctor primero' : '')
                         }
                       }}
                     />
