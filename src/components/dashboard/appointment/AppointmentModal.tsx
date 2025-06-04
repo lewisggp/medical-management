@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'react-toastify';
@@ -16,7 +16,8 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  FormHelperText
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
@@ -26,6 +27,7 @@ import { AppointmentFormValues, appointmentSchema, appointmentStatuses, appointm
 import useDoctors from '@/hooks/useDoctor';
 import usePatients from '@/hooks/usePatient';
 import { Appointment } from '@/hooks/useAppointment';
+import { specialties } from '@/lib/doctor-specialties';
 
 interface AppointmentModalProps {
   open: boolean;
@@ -42,6 +44,12 @@ const AppointmentModal = ({ open, onClose, appointment, action, onSuccess }: App
 
   const { doctors } = useDoctors();
   const { patients } = usePatients();
+  const [selectedSpecialty, setSelectedSpecialty] = useState<string>(specialties[0]);
+
+  const filteredDoctors = useMemo(() => {
+    if (!selectedSpecialty) return doctors;
+    return doctors.filter((doctor) => doctor.specialty === selectedSpecialty);
+  }, [doctors, selectedSpecialty]);
 
   const {
     control,
@@ -52,7 +60,15 @@ const AppointmentModal = ({ open, onClose, appointment, action, onSuccess }: App
     formState: { errors, isSubmitting }
   } = useForm<AppointmentFormValues>({
     resolver: zodResolver(appointmentSchema),
-    defaultValues: appointment ?? {}
+    defaultValues: {
+      patientId: -1,
+      doctorId: -1,
+      type: 'GENERAL',
+      description: '',
+      date: new Date(),
+      notes: '',
+      status: 'SCHEDULED'
+    }
   });
 
   useEffect(() => {
@@ -135,9 +151,31 @@ const AppointmentModal = ({ open, onClose, appointment, action, onSuccess }: App
                           </MenuItem>
                         ))}
                       </Select>
+                      {errors.patientId && <FormHelperText>{errors.patientId.message}</FormHelperText>}
                     </FormControl>
                   )}
                 />
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormControl fullWidth>
+                  <InputLabel>Especialidad</InputLabel>
+                  <Select
+                    value={selectedSpecialty}
+                    onChange={(e) => {
+                      setSelectedSpecialty(e.target.value as string);
+                      setValue('doctorId', 0, { shouldValidate: true });
+                    }}
+                    label="Especialidad"
+                    disabled={isView}
+                  >
+                    {specialties.map((specialty) => (
+                      <MenuItem key={specialty} value={specialty}>
+                        {specialty}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Grid>
 
               <Grid size={{ xs: 12, sm: 6 }}>
@@ -148,12 +186,13 @@ const AppointmentModal = ({ open, onClose, appointment, action, onSuccess }: App
                     <FormControl fullWidth error={!!errors.doctorId}>
                       <InputLabel>Doctor</InputLabel>
                       <Select {...field} label="Doctor" disabled={isView}>
-                        {doctors.map((doctor) => (
+                        {filteredDoctors.map((doctor) => (
                           <MenuItem key={doctor.id} value={doctor.id}>
                             {doctor.name} - {doctor.specialty}
                           </MenuItem>
                         ))}
                       </Select>
+                      {errors.doctorId && <FormHelperText>{errors.doctorId.message}</FormHelperText>}
                     </FormControl>
                   )}
                 />
