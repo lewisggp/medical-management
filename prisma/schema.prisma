@@ -15,18 +15,32 @@ datasource db {
 }
 
 model Doctor {
-  id           Int           @id @default(autoincrement())
+  id           Int              @id @default(autoincrement())
   name         String
-  email        String        @unique
-  license      String        @unique
+  email        String          @unique
+  license      String          @unique
   phone        String
   specialty    String
   password     String
   appointments Appointment[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  user         User?         @relation(fields: [userId], references: [id])
-  userId       String        @unique
+  schedules    DoctorSchedule[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  user         User?           @relation(fields: [userId], references: [id])
+  userId       String          @unique
+}
+
+model DoctorSchedule {
+  id        Int      @id @default(autoincrement())
+  doctor    Doctor   @relation(fields: [doctorId], references: [id])
+  doctorId  Int
+  dayOfWeek Int      // 0-6 (Sunday-Saturday)
+  startTime String   // Format: "HH:mm"
+  endTime   String   // Format: "HH:mm"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([doctorId, dayOfWeek]) // One schedule per day per doctor
 }
 
 model Patient {

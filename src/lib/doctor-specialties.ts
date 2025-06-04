@@ -1,1 +1,15 @@
-export const specialties = ['Ginecología', 'Cardiología', 'Pediatría', 'Dermatología', 'Neurología', 'Ortopedia'];
+export const specialties = [
+  'Cardiología',
+  'Dermatología',
+  'Fisiatria',
+  'Gerontología',
+  'Ginecología',
+  'Intensivista',
+  'Neurología',
+  'Ortopedia',
+  'Pediatría',
+  'Psicología',
+  'Psiquiatria',
+  'Rehabilitación',
+  'Traumatología'
+];

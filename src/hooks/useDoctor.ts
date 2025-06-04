@@ -1,7 +1,10 @@
-import { Doctor } from '@/generated/prisma';
+import { DoctorSchedule, Doctor as DoctorType } from '@/generated/prisma';
 import useSWR from 'swr';
+import { fetcher } from '@/lib/fetcher';
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+export type Doctor = DoctorType & {
+  schedules: DoctorSchedule[];
+};
 
 export default function useDoctors() {
   const { data, error, mutate } = useSWR<Doctor[]>('/api/doctors', fetcher);
