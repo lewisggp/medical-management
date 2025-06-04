@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { isWithinInterval, set } from 'date-fns';
+import { isWithinInterval, set, addMinutes } from 'date-fns';
 
 // Define the schedule type
 interface DoctorSchedule {
@@ -11,11 +11,20 @@ interface DoctorSchedule {
 interface Doctor {
   id: number;
   schedules: DoctorSchedule[];
+  specialty: string;
+}
+
+interface Appointment {
+  id: number;
+  date: Date;
+  doctorId: number;
 }
 
 declare global {
   interface Window {
     selectedDoctor: Doctor | null;
+    existingAppointments: Appointment[];
+    currentAppointmentId?: number;
   }
 }
 
@@ -70,6 +79,42 @@ export const appointmentSchema = z
         message: 'La hora seleccionada está fuera del horario de atención del doctor',
         path: ['date']
       });
+      return;
+    }
+
+    // Check for overlapping appointments for specialists
+    if (doctor.specialty !== 'GENERAL') {
+      const existingAppointments = typeof window !== 'undefined' ? window.existingAppointments : [];
+      if (!existingAppointments) return;
+
+      // Assume each appointment takes 30 minutes
+      const appointmentStart = data.date;
+      const appointmentEnd = addMinutes(data.date, 30);
+
+      const hasOverlap = existingAppointments.some((appointment) => {
+        // Skip the current appointment being edited
+        if (window.currentAppointmentId && appointment.id === window.currentAppointmentId) {
+          return false;
+        }
+
+        const existingStart = new Date(appointment.date);
+        const existingEnd = addMinutes(existingStart, 30);
+
+        return (
+          appointment.doctorId === data.doctorId &&
+          ((appointmentStart >= existingStart && appointmentStart < existingEnd) ||
+            (appointmentEnd > existingStart && appointmentEnd <= existingEnd) ||
+            (appointmentStart <= existingStart && appointmentEnd >= existingEnd))
+        );
+      });
+
+      if (hasOverlap) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Ya existe una cita programada para este horario',
+          path: ['date']
+        });
+      }
     }
   });
 

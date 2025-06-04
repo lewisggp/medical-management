@@ -47,11 +47,36 @@ const AppointmentModal = ({ open, onClose, appointment, action, onSuccess }: App
   const { patients } = usePatients();
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>(specialties[0]);
   const [selectedDoctor, setSelectedDoctor] = useState<(typeof doctors)[0] | null>(null);
+  const [existingAppointments, setExistingAppointments] = useState<any[]>([]);
 
-  const filteredDoctors = useMemo(() => {
-    if (!selectedSpecialty) return doctors;
-    return doctors.filter((doctor) => doctor.specialty === selectedSpecialty);
-  }, [doctors, selectedSpecialty]);
+  // Fetch existing appointments when modal opens
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        const response = await fetch('/api/appointments');
+        if (!response.ok) throw new Error('Error fetching appointments');
+        const appointments = await response.json();
+        setExistingAppointments(appointments);
+        if (typeof window !== 'undefined') {
+          window.existingAppointments = appointments;
+        }
+      } catch (error) {
+        console.error('Error fetching appointments:', error);
+        toast.error('Error loading appointments');
+      }
+    };
+
+    if (open) {
+      fetchAppointments();
+    }
+  }, [open]);
+
+  // Set current appointment ID for edit mode
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.currentAppointmentId = appointment?.id;
+    }
+  }, [appointment]);
 
   const {
     control,
@@ -92,7 +117,7 @@ const AppointmentModal = ({ open, onClose, appointment, action, onSuccess }: App
     const doctor = doctors.find((d) => d.id === watchDoctorId);
     setSelectedDoctor(doctor || null);
     if (typeof window !== 'undefined') {
-      (window as any).selectedDoctor = doctor || null;
+      window.selectedDoctor = doctor || null;
     }
   }, [watchDoctorId, doctors]);
 
@@ -266,7 +291,7 @@ const AppointmentModal = ({ open, onClose, appointment, action, onSuccess }: App
                         }}
                       >
                         <MenuItem value={-1}>Seleccione un doctor</MenuItem>
-                        {filteredDoctors.map((doctor) => (
+                        {doctors.map((doctor) => (
                           <MenuItem key={doctor.id} value={doctor.id}>
                             {doctor.name} - {doctor.specialty}
                           </MenuItem>
