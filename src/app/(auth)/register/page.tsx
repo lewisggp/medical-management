@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Button, TextField, Typography, Grid, Alert, MenuItem } from '@mui/material';
 import Link from 'next/link';
-import { useForm } from 'react-hook-form';
+import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { DoctorFormValues, doctorSchema } from '@/schemas/Doctor';
 import { specialties } from '@/lib/doctor-specialties';
@@ -13,12 +13,15 @@ export default function RegisterPage() {
   const [error, setError] = useState<string>('');
   const router = useRouter();
   const {
+    control,
     register,
     handleSubmit,
     formState: { errors }
   } = useForm<DoctorFormValues>({
     resolver: zodResolver(doctorSchema)
   });
+
+  useFieldArray({ control, name: 'schedules' });
 
   const onSubmit = async (data: DoctorFormValues) => {
     try {
@@ -113,7 +116,7 @@ export default function RegisterPage() {
               fullWidth
               select
               label="Specialty"
-              defaultValue={null}
+              defaultValue={specialties[0]}
               {...register('specialty')}
               error={!!errors.specialty}
               helperText={errors.specialty?.message}
