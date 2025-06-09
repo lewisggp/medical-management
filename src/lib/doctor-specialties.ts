@@ -1,15 +1,20 @@
 export const specialties = [
   'Cardiología',
   'Dermatología',
+  'Emergencia',
   'Fisiatria',
+  'Fisioterapia',
   'Gerontología',
   'Ginecología',
   'Intensivista',
   'Neurología',
+  'Odontología',
   'Ortopedia',
   'Pediatría',
+  'Primera y sucesiva',
   'Psicología',
   'Psiquiatria',
+  'Regularidad',
   'Rehabilitación',
   'Traumatología'
 ];
