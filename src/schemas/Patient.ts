@@ -22,10 +22,10 @@ export const patientSchema = z.object({
           age--;
         }
         console.log(age);
-        return age >= 60;
+        return age >= 1;
       },
       {
-        message: 'El paciente debe tener al menos 60 años'
+        message: 'El paciente debe tener al menos 1 año'
       }
     ),
   address: z.string().min(1, 'Dirección es requerida'),
